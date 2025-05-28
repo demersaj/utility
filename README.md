@@ -1,1 +1,1 @@
-Collection of random utility/test scripts I don't want to lose
+Collection of random utility/test scripts I use often
