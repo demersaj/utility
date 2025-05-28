@@ -6,12 +6,6 @@
 USERNAME=$(whoami)
 echo "Hello $USERNAME!"
 
-# Check if rsync is installed
-if ! command -v rsync &> /dev/null; then
-    echo "rsync is required but not installed. Please install rsync first."
-    exit 1
-fi
-
 # Ensure cache directory exists
 CACHE_DIR="/Users/$USERNAME/.cache/huggingface/hub/"
 if [ ! -d "$CACHE_DIR" ]; then
@@ -24,7 +18,7 @@ USB_MOUNT_POINT=$(pwd)
 echo "Using folders from: $USB_MOUNT_POINT"
 
 # List only top-level directories
-echo -e "\nFolders available on the USB drive:"
+echo -e "\nModels available:"
 DIR_LIST=$(find "$USB_MOUNT_POINT" -mindepth 1 -maxdepth 1 -type d -not -path "*/\.*" | sort)
 
 if [ -z "$DIR_LIST" ]; then
@@ -32,23 +26,41 @@ if [ -z "$DIR_LIST" ]; then
     exit 1
 fi
 
-# Display directories with numbers
-echo "$DIR_LIST" | nl
+# Display directories with numbers, showing only folder names without the "models--" prefix
+echo "$DIR_LIST" | while read -r line; do
+    basename "$line" | sed 's/^models--//'
+done | nl
 
-# Prompt user to select a directory
-echo -e "\nEnter the number of the folder you want to copy to your .cache folder: "
-read DIR_NUM
+# Loop until user makes a valid selection
+while true; do
+    # Prompt user to select a directory
+    echo -e "\nEnter the number of the model you want to copy to your .cache folder (or 'q' to quit): "
+    read DIR_NUM
 
-# Get the selected directory
-SELECTED_DIR=$(echo "$DIR_LIST" | sed "${DIR_NUM}q;d")
+    # Check if user wants to quit
+    if [ "$DIR_NUM" = "q" ]; then
+        echo "Exiting script."
+        exit 0
+    fi
 
-if [ -z "$SELECTED_DIR" ]; then
-    echo "Invalid folder selection. Exiting."
-    exit 1
-fi
+    # Get the selected directory from the full path list
+    SELECTED_DIR=$(echo "$DIR_LIST" | sed "${DIR_NUM}q;d")
+
+    if [ -z "$SELECTED_DIR" ]; then
+        echo "Invalid model selection. Please try again."
+        echo -e "\nModels available:"
+        echo "$DIR_LIST" | while read -r line; do
+            basename "$line" | sed 's/^models--//'
+        done | nl
+        continue
+    fi
+
+    # Valid selection - break the loop
+    break
+done
 
 DIR_NAME=$(basename "$SELECTED_DIR")
-echo "Selected folder: $DIR_NAME"
+echo "Selected model: $DIR_NAME"
 
 # Create target directory if it doesn't exist
 TARGET_DIR="$CACHE_DIR/$DIR_NAME"
@@ -58,7 +70,7 @@ fi
 
 # Copy the directory recursively with progress
 echo -e "\nCopying folder $DIR_NAME to $CACHE_DIR..."
-rsync -ah --progress "$SELECTED_DIR/" "$TARGET_DIR/"
+cp -Rv "$SELECTED_DIR/" "$TARGET_DIR/"
 
 # Check if copy was successful
 if [ $? -eq 0 ]; then
