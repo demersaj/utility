@@ -1,3 +1,8 @@
+""" 
+Gets models from local webFrame instance and prints them to the console
+Also saves the models to a file called models.txt
+"""
+
 def get_model_ids():
     import requests
     import json
@@ -19,14 +24,14 @@ if __name__ == '__main__':
     
     # Print to console
     print("\nAvailable Models:")
-    print("----------------")
+    print("------------------")
     for model_id in model_ids:
         print(f"- {model_id}")
     
     # Save to file
     with open('models.txt', 'w') as f:
         f.write("Available Models:\n")
-        f.write("----------------\n")
+        f.write("------------------\n")
         for model_id in model_ids:
             f.write(f"- {model_id}\n")
     
